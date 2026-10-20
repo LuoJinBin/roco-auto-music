@@ -6,7 +6,10 @@ Release: https://github.com/oblitum/Interception/releases/tag/v1.0.1
 
 Library source: https://github.com/oblitum/Interception/tree/v1.0.1/library
 
-The repository does not redistribute the upstream DLL, driver or installer.
+Git source does not store the upstream DLL, driver or installer. Release
+packages include the dynamically linked DLL, license text and corresponding
+library source archive; the release also provides that source archive separately.
+No system driver installer is bundled or automatically run.
 `tools/fetch_interception.py` retrieves the official archive only on explicit
 invocation, checks its hash and extracts the x64 DLL. It never installs or
 executes the downloaded files. The application dynamically loads that library

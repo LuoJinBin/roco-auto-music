@@ -2,7 +2,35 @@
 
 面向 Windows 的《洛克王国：世界》九键手碟自动奏乐工具。Python / Tkinter 小窗口，支持 [RocoMusic](https://rocomusic.cn/) 曲库搜索、网页同款筛选、本地 MIDI 和倍速。
 
-**当前为开发预发布源码。新增筛选与倍速尚未运行测试；本次开源整理也没有启动程序或奏乐。** 此前开发版本曾人工验证九键、重复音、双音及《蜜雪冰城》可奏响，不代表当前版本或其他电脑已经通过验收。详见 [验证状态](docs/STATUS.md)。
+**当前为开发预发布版本。新增筛选与倍速尚未完成运行验收；安装包仅完成构建，尚未安装/卸载实测。** 此前开发版本曾人工验证九键、重复音、双音及《蜜雪冰城》可奏响，不代表当前版本或其他电脑已经通过验收。详见 [验证状态](docs/STATUS.md)。
+
+## 下载安装
+
+无需自行安装 Python，选择一种方式：
+
+- **[Windows x64 安装包](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.1.0-alpha.1/RocoAutoMusic-Setup-1.1.0-alpha.1-x64.exe)**：安装到用户目录，提供开始菜单入口、可选桌面快捷方式与卸载。
+- **[免安装 ZIP](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.1.0-alpha.1/RocoAutoMusic-1.1.0-alpha.1-Windows-x64.zip)**：解压后运行 `RocoAutoMusic.exe`。
+- [完整 Release、源码与 SHA-256 校验值](https://github.com/LuoJinBin/roco-auto-music/releases/tag/v1.1.0-alpha.1)。
+
+安装包不会自动启动程序、安装系统驱动或重启电脑。首次使用 Interception 输入仍需自行配置官方系统驱动；已经配置过的电脑无需重复安装。驱动获取与安装步骤见 [首次使用说明](docs/INSTALL.md)。
+
+## 界面截图
+
+实际工具界面截图；曲库列表为公开页面快照。截图期间未绑定游戏、未启用全局快捷键或发送音键，不代表演奏测试通过。
+
+![主界面与全部曲谱](docs/screenshots/main.png)
+
+<details><summary>查看分类筛选</summary>
+
+![分类筛选](docs/screenshots/filters.png)
+
+</details>
+
+<details><summary>查看六档倍速</summary>
+
+![倍速选择](docs/screenshots/speeds.png)
+
+</details>
 
 ## 功能
 
@@ -43,7 +71,11 @@ python -m venv .venv
 .\.venv\Scripts\python.exe build.py
 ```
 
-输出为 `dist/RocoAutoMusic.exe`。打包过程不启动程序或执行测试。本仓库不上传第三方 DLL、驱动、安装器或含这些组件的现成 EXE；自行构建或再分发时，第三方组件仍按其上游条款使用，见 [第三方说明](THIRD_PARTY_NOTICES.md)。
+输出为 `dist/RocoAutoMusic.exe`。打包过程不启动程序或执行测试。Git 源码不存放 DLL、驱动或 EXE；Release 程序包包含动态链接的 Interception 库、许可及库源码副本，不包含系统驱动安装器。项目自有代码采用 MIT，第三方组件仍按其上游条款使用，见 [第三方说明](THIRD_PARTY_NOTICES.md)。
+
+安装包构建脚本为 `installer/RocoAutoMusic.iss`，使用 Inno Setup。向 ISCC 传入 `PayloadDir`、`OutputDir` 和可选 `AppVersion` 预处理参数；`PayloadDir` 指向包含程序、许可、依赖源码和中文说明的发布目录。编译安装包不执行安装。
+
+也可使用 `tools/build_release.py --iscc <ISCC路径> --interception-source <上游源码ZIP路径>` 准备完整目录、复制许可和对应源码，并编译安装包与免安装 ZIP。固定版本的上游源码 ZIP 随 Release 提供。截图脚本为 `tools/capture_screenshots.py`，其可选依赖见 `requirements-screenshots.txt`；它只启动隔离预览，不绑定游戏或启用全局快捷键。
 
 ## 使用
 
