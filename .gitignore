@@ -1,0 +1,24 @@
+# Environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.spec
+*.exe
+*.dll
+*.sys
+*.zip
+
+# Local data and downloads
+.vendor/
+outputs/
+cache/
+logs/
+*.log
+*.tmp
+.env
+.env.*
+.idea/
+.vscode/
