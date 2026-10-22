@@ -27,6 +27,16 @@ class ScoreError(ValueError):
     pass
 
 
+class UnsupportedNotes(ScoreError):
+    """Keep technical detail separate from the actionable UI explanation."""
+    def __init__(self, score):
+        self.score = score
+        self.counts = score.unsupported
+        self.count = sum(self.counts.values())
+        self.details = "\n".join(f"{note_name(p)}（MIDI {p}）：{c} 次" for p, c in sorted(self.counts.items()))
+        super().__init__(f"这首曲谱需要先转换：{len(score.notes)} 个音符中有 {self.count} 个不属于游戏的九个音。请换一首九键可直接演奏的 MIDI，或转换后重新导入。")
+
+
 @dataclass(frozen=True)
 class Note:
     pitch: int
@@ -65,8 +75,7 @@ class Score:
             if not all(math.isfinite(x) for x in (n.start, n.duration)) or n.start < 0 or n.duration < 0:
                 raise ScoreError("曲谱包含无效的时间数据。")
         if self.unsupported:
-            detail = "、".join(f"{note_name(p)}(MIDI {p}) ×{c}" for p, c in sorted(self.unsupported.items()))
-            raise ScoreError(f"有 {sum(self.unsupported.values())} 个音符超出游戏九键范围：{detail}。请先在网站转谱并导出 MIDI，不会自动改音或丢音。")
+            raise UnsupportedNotes(self)
 
 
 def note_name(pitch: int) -> str:

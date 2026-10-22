@@ -9,7 +9,7 @@ from unittest.mock import patch
 import mido
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from rocomusic.score import KEY_MAP, Note, Score, ScoreError, key_events, load_midi
+from rocomusic.score import KEY_MAP, Note, Score, ScoreError, UnsupportedNotes, key_events, load_midi
 from rocomusic.player import Player
 from rocomusic.catalog import CatalogClient, SiteBlocked, SiteError, download_link, parse_library, validate_url, validate_destination, FILE_HOST
 
@@ -52,8 +52,9 @@ class MidiTests(unittest.TestCase):
 
     def test_unsupported_blocked_without_dropping(self):
         score = Score("不兼容", [Note(52, 0, 1), Note(54, 1, 1)], 2)
-        with self.assertRaisesRegex(ScoreError, "MIDI 54"):
+        with self.assertRaises(UnsupportedNotes) as raised:
             key_events(score)
+        self.assertEqual(raised.exception.counts, {54: 1})
         self.assertEqual(len(score.notes), 2)
 
     def test_simultaneous_duplicate_coalesced(self):

@@ -11,7 +11,8 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "1.1.0-alpha.1"
+sys.path.insert(0, str(ROOT))
+from rocomusic.version import VERSION
 SOURCE_SHA256 = "9306fa995e1240839acc226e279a38fec9a94dac99268e8b366d5dfd85f5728c"
 
 
@@ -28,8 +29,10 @@ def main():
     args.output = args.output.resolve()
     if sha(args.interception_source) != SOURCE_SHA256:
         raise SystemExit("Interception source archive does not match the recorded release source hash")
-    payload = ROOT / ".vendor/release/payload"
-    payload.mkdir(parents=True, exist_ok=True)
+    payload = ROOT / f".vendor/release/{VERSION}/payload"
+    if payload.exists():
+        raise SystemExit("This version's payload directory already exists. Use a fresh version or review the existing payload before rebuilding.")
+    payload.mkdir(parents=True)
     shutil.copy2(ROOT / "dist/RocoAutoMusic.exe", payload / "RocoAutoMusic.exe")
     for name in ("LICENSE", "THIRD_PARTY_NOTICES.md", "README.md"):
         shutil.copy2(ROOT / name, payload / ("使用说明.md" if name == "README.md" else name))
@@ -61,7 +64,7 @@ def main():
                     shutil.copy2(original, target)
     (payload / "安装前说明.txt").write_text(
         "洛克自动奏乐 " + VERSION + "（预发布）\n\n"
-        "安装包仅完成构建，未进行安装/卸载实测；筛选与倍速未完成运行验收。\n"
+        "安装包仅完成构建；更新、界面、筛选与倍速未完成运行验收，未做安装/卸载实测。\n"
         "安装程序只安装本工具，不会启动奏乐、安装系统键鼠驱动或重启电脑。\n"
         "首次使用 Interception 模式需要使用者自行配置官方系统驱动；已配置过无需重复安装。\n"
         "项目自有代码采用 MIT，第三方组件适用各自许可；非商业/商业使用区别见 THIRD_PARTY_NOTICES.md。\n"

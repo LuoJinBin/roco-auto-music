@@ -2,21 +2,21 @@
 
 面向 Windows 的《洛克王国：世界》九键手碟自动奏乐工具。Python / Tkinter 小窗口，支持 [RocoMusic](https://rocomusic.cn/) 曲库搜索、网页同款筛选、本地 MIDI 和倍速。
 
-**当前为开发预发布版本。新增筛选与倍速尚未完成运行验收；安装包仅完成构建，尚未安装/卸载实测。** 此前开发版本曾人工验证九键、重复音、双音及《蜜雪冰城》可奏响，不代表当前版本或其他电脑已经通过验收。详见 [验证状态](docs/STATUS.md)。
+**当前为开发预发布版本。更新、界面、筛选与倍速未完成运行验收；安装包仅完成构建，尚未安装/卸载实测。** 此前开发版本曾人工验证九键、重复音、双音及《蜜雪冰城》可奏响，不代表当前版本或其他电脑已经通过验收。详见 [验证状态](docs/STATUS.md)。
 
 ## 下载安装
 
 无需自行安装 Python，选择一种方式：
 
-- **[Windows x64 安装包](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.1.0-alpha.1/RocoAutoMusic-Setup-1.1.0-alpha.1-x64.exe)**：安装到用户目录，提供开始菜单入口、可选桌面快捷方式与卸载。
-- **[免安装 ZIP](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.1.0-alpha.1/RocoAutoMusic-1.1.0-alpha.1-Windows-x64.zip)**：解压后运行 `RocoAutoMusic.exe`。
-- [完整 Release、源码与 SHA-256 校验值](https://github.com/LuoJinBin/roco-auto-music/releases/tag/v1.1.0-alpha.1)。
+- **[Windows x64 安装包](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.2.0-alpha.1/RocoAutoMusic-Setup-1.2.0-alpha.1-x64.exe)**：安装到用户目录，提供开始菜单入口、可选桌面快捷方式与卸载。
+- **[免安装 ZIP](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.2.0-alpha.1/RocoAutoMusic-1.2.0-alpha.1-Windows-x64.zip)**：解压后运行 `RocoAutoMusic.exe`。
+- [完整 Release、源码与 SHA-256 校验值](https://github.com/LuoJinBin/roco-auto-music/releases/tag/v1.2.0-alpha.1)。
 
 安装包不会自动启动程序、安装系统驱动或重启电脑。首次使用 Interception 输入仍需自行配置官方系统驱动；已经配置过的电脑无需重复安装。驱动获取与安装步骤见 [首次使用说明](docs/INSTALL.md)。
 
 ## 界面截图
 
-实际工具界面截图；曲库列表为公开页面快照。截图期间未绑定游戏、未启用全局快捷键或发送音键，不代表演奏测试通过。
+天空、草地、城堡与手碟均为工具原创绘制，没有使用游戏官方素材。实际工具界面截图；曲库列表为公开页面快照。截图期间未绑定游戏、未启用全局快捷键或发送音键，不代表演奏测试通过。
 
 ![主界面与全部曲谱](docs/screenshots/main.png)
 
@@ -32,6 +32,18 @@
 
 </details>
 
+<details><summary>查看友好的曲谱处理提示</summary>
+
+![需要转换的曲谱处理指引（示例数据）](docs/screenshots/needs-conversion.png)
+
+</details>
+
+<details><summary>查看更新窗口</summary>
+
+![检查更新（未发起网络检查）](docs/screenshots/updates.png)
+
+</details>
+
 ## 功能
 
 - 默认显示全部曲谱，支持曲谱/精选、分类、格式、难度、排序、音域和时长 7 项筛选。
@@ -40,9 +52,17 @@
 - 倍速：0.5×、0.75×、1×、1.25×、1.5×、2×，默认 1×。
 - F8 开始/暂停/继续，F9 停止复位；首次开始倒计时 3 秒。
 - 每首播放完停止，不循环、不自动下一首；切换到其他窗口自动暂停。
-- 越界音符明确报错，不自动移调、替换或丢音。
+- 超范围曲谱给出处理入口：找九键可直奏曲谱、查看转谱说明、展开音符详情；不自动改音或删音。
+- 三步就绪提示、悬停说明、中文帮助；新曲载入失败后清空旧曲，避免误奏。
+- 基于 GitHub Releases 检查更新、稳定/预发布通道、可选启动提醒、下载/取消、SHA-256 校验和确认后退出安装。无需自建后端。
 
 全部格式均可浏览，自动演奏仅支持 MIDI。图片/PDF/JSON/TXT 可打开网页查看，不直接识别为演奏事件。在线曲谱和作者信息属于各自分享者，本仓库不附带社区曲谱。
+
+## 更新
+
+右上角“检查更新”可查看新版本和说明，下载完成校验通过后，再确认“退出并安装”。保留本地配置与缓存，不自动奏乐、安装驱动或重启。启动检查默认关闭；本开发版默认接收预发布，可自行关闭。便携用户也可从发布页下载新版 ZIP。
+
+**1.1 旧版需要先手动下载安装一次 1.2，之后才有更新入口。** 当前只完成代码与打包，更新安装全链路未实测。详见 [更新说明与发布规范](docs/UPDATES.md)。
 
 ## 环境与输入方式
 
@@ -97,7 +117,7 @@ python -m venv .venv
 
 ## 数据与网络
 
-缓存和日志在 `%LOCALAPPDATA%\RocoAutoMusic`。网站收到搜索词和筛选参数；下载完成后的 MIDI 解析、调度在本机进行。程序不录音、不截图，不读取账号、Cookie 或游戏内存。
+缓存和日志在 `%LOCALAPPDATA%\RocoAutoMusic`。网站收到搜索词和筛选参数；下载完成后的 MIDI 解析、调度在本机进行。更新查询由 GitHub 接收普通公开 API 请求，不上传曲谱或账号，不需要 Token。程序不录音、不截图，不读取账号、Cookie 或游戏内存。
 
 在线读取使用 Windows 证书验证，不忽略 TLS 错误；网站返回 HTTP 401/403/412/429、安全验证或明确拒绝时停止读取，不切换身份或后端。非 MIDI 和不兼容音符不会静默转换。
 
