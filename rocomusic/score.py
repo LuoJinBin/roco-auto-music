@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict, deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from io import BytesIO
 import math
 from pathlib import Path
@@ -34,7 +34,7 @@ class UnsupportedNotes(ScoreError):
         self.counts = score.unsupported
         self.count = sum(self.counts.values())
         self.details = "\n".join(f"{note_name(p)}（MIDI {p}）：{c} 次" for p, c in sorted(self.counts.items()))
-        super().__init__(f"这首曲谱需要先转换：{len(score.notes)} 个音符中有 {self.count} 个不属于游戏的九个音。请换一首九键可直接演奏的 MIDI，或转换后重新导入。")
+        super().__init__(f"这首曲谱有 {self.count} 个音符超出游戏的九键音域。可在工具内适配九键。")
 
 
 @dataclass(frozen=True)
@@ -55,6 +55,7 @@ class Score:
     source: str = ""
     version: str = ""
     sha256: str = ""
+    adapted_notes: int = 0
 
     @property
     def unsupported(self) -> Counter:
@@ -80,6 +81,26 @@ class Score:
 
 def note_name(pitch: int) -> str:
     return f"{('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B')[pitch % 12]}{pitch // 12 - 1}"
+
+
+def adapt_to_nine_keys(score: Score) -> Score:
+    """Prefer the same note in another octave, then the closest pitch class."""
+    def distance(source: int, target: int) -> tuple[int, int, int]:
+        semitones = (source - target) % 12
+        return min(semitones, 12 - semitones), abs(source - target), target
+
+    mapping = {
+        pitch: min(KEY_MAP, key=lambda target: distance(pitch, target))
+        for pitch in score.unsupported
+    }
+    if not mapping:
+        return score
+    return replace(
+        score,
+        notes=[replace(note, pitch=mapping[note.pitch]) if note.pitch in mapping else note
+               for note in score.notes],
+        adapted_notes=sum(note.pitch in mapping for note in score.notes),
+    )
 
 
 def load_midi(data: bytes, title: str = "本地曲谱", source: str = "", version: str = "") -> Score:

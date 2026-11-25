@@ -15,9 +15,12 @@ from .catalog import BASE, CatalogClient, FILTER_OPTIONS, SiteBlocked, SiteError
 from .native import Hotkeys, InputError, NativeSink, list_windows, permission_issue
 from .device_input import DeviceSink, driver_registered
 from .player import Player, timing_summary
-from .score import KEY_MAP, SPEEDS, ScoreError, UnsupportedNotes, load_file
-from .ui import BG, INK, KingdomBanner, ScrollBody, Tooltip, dialog, readonly_text, show_help
-from .updater import UpdateClient, load_preferences
+from .score import KEY_MAP, SPEEDS, ScoreError, UnsupportedNotes, adapt_to_nine_keys, load_file
+from .ui import (
+    BG, DEFAULT_CATALOG_ROWS, INK, MAX_CATALOG_ROWS, MIN_CATALOG_ROWS,
+    KingdomBanner, ScrollBody, Tooltip, TreeHeightGrip, dialog, readonly_text, show_help,
+)
+from .updater import UpdateClient, load_preferences, save_preferences
 from .update_ui import UpdateWindow
 from .version import VERSION
 
@@ -107,10 +110,13 @@ class App:
         style.map("TButton", background=[("active", "#c5dfdc")])
         style.configure("Accent.TButton", background="#267d88", foreground="#ffffff", font=("Microsoft YaHei UI", 10, "bold"))
         style.map("Accent.TButton", background=[("active", "#1b606c"), ("disabled", "#9db7bd")], foreground=[("disabled", "#f2f7f8")])
-        style.configure("Treeview", rowheight=29, background="#ffffff", fieldbackground="#ffffff", borderwidth=0)
+        row_height = 29
+        style.configure("Treeview", rowheight=row_height, background="#ffffff", fieldbackground="#ffffff", borderwidth=0)
         style.configure("Treeview.Heading", padding=7, font=("Microsoft YaHei UI", 10, "bold"))
         style.map("Treeview", background=[("selected", "#d7edeb")], foreground=[("selected", "#194b54")])
         style.configure("TProgressbar", background="#42a09b", troughcolor="#dce9e7", borderwidth=0)
+        playback = ttk.Frame(r, padding=(20, 8))
+        playback.pack(side="bottom", fill="x")
         self.scroll_body = ScrollBody(r)
         wrap = self.scroll_body.body
         wrap.columnconfigure(0, weight=1)
@@ -166,7 +172,9 @@ class App:
         catalog.grid(row=4, column=0, sticky="nsew")
         catalog.columnconfigure(0, weight=1)
         catalog.rowconfigure(0, weight=1)
-        self.tree = ttk.Treeview(catalog, columns=("title", "author", "format", "category"), show="headings", selectmode="browse", height=3)
+        rows = self.preferences["catalog_rows"]
+        rows = DEFAULT_CATALOG_ROWS if rows is None else max(MIN_CATALOG_ROWS, min(MAX_CATALOG_ROWS, rows))
+        self.tree = ttk.Treeview(catalog, columns=("title", "author", "format", "category"), show="headings", selectmode="browse", height=rows)
         for name, label, width in (("title", "曲名", 400), ("author", "分享者", 140), ("format", "格式", 85), ("category", "分类 / 难度", 170)):
             self.tree.heading(name, text=label)
             self.tree.column(name, width=width, minwidth=90)
@@ -176,8 +184,10 @@ class App:
         self.tree.configure(yscrollcommand=scroll.set)
         self.tree.bind("<Double-1>", lambda _: self.load_selected())
         self.tree.bind("<<TreeviewSelect>>", lambda _: self._selection_changed())
+        height_grip = TreeHeightGrip(catalog, self.tree, row_height, self._save_catalog_height)
+        height_grip.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(3, 0))
         bar = ttk.Frame(catalog)
-        bar.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 12))
+        bar.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 10))
         self.prev = ttk.Button(bar, text="上一页", command=lambda: self.search(self.page - 1), state="disabled")
         self.prev.pack(side="left")
         self.page_label = ttk.Label(bar, text="1 / 1 页")
@@ -220,8 +230,8 @@ class App:
         driver_help = ttk.Button(self.advanced, text="驱动与安装说明", command=lambda: self.open_help("没声音怎么办"))
         driver_help.pack(side="right")
         self.advanced.grid_remove()
-        transport = ttk.Frame(wrap)
-        transport.grid(row=11, column=0, sticky="ew")
+        transport = ttk.Frame(playback)
+        transport.pack(fill="x")
         self.start_button = ttk.Button(transport, text="开始演奏  F8", style="Accent.TButton", command=self.toggle)
         self.start_button.pack(side="left")
         stop = ttk.Button(transport, text="停止  F9", command=self.player.stop)
@@ -232,13 +242,12 @@ class App:
         self.speed_box.bind("<<ComboboxSelected>>", lambda _: self._change_speed())
         export = ttk.Button(transport, text="导出演奏记录", command=self.export_log)
         export.pack(side="right")
-        self.progress = ttk.Progressbar(wrap, mode="determinate")
-        self.progress.grid(row=12, column=0, sticky="ew", pady=(11, 6))
-        foot = ttk.Frame(wrap)
-        foot.grid(row=13, column=0, sticky="ew")
-        ttk.Label(foot, textvariable=self.status_label, wraplength=720).pack(side="left")
+        self.progress = ttk.Progressbar(playback, mode="determinate")
+        self.progress.pack(fill="x", pady=(8, 5))
+        foot = ttk.Frame(playback)
+        foot.pack(fill="x")
         ttk.Label(foot, textvariable=self.time_label).pack(side="right")
-        ttk.Label(wrap, text="F8 开始 / 暂停 / 继续    F9 停止    ·    切换窗口会暂停，回游戏后按 F8 继续    ·    单首结束即停止", foreground="#6e8994", font=("Microsoft YaHei UI", 9)).grid(row=14, column=0, sticky="w", pady=(9, 0))
+        ttk.Label(foot, textvariable=self.status_label, wraplength=680).pack(side="left", fill="x", expand=True, anchor="w")
         tips = {
             self.search_entry: "输入曲名或分享者，按回车搜索。留空可浏览全部曲谱。",
             self.search_button: "用当前关键词和筛选条件搜索第一页。",
@@ -247,6 +256,7 @@ class App:
             self.apply_button: "选好筛选条件后点这里；翻页会沿用这些条件。",
             self.clear_button: "清空关键词和所有筛选，回到全部曲谱第一页。",
             self.tree: "单击选中，再载入；双击可直接载入 MIDI。载入不会开始演奏。",
+            height_grip: "向下拖动显示更多曲目，向上拖动缩小。点击后也可按方向键。",
             self.load_button: "先下载完整 MIDI 并检查九键音域，成功后才可开始。",
             webpage: "在浏览器查看所选曲谱、试听或转谱入口。",
             self.prev: "浏览上一页，保留已应用的筛选条件。",
@@ -268,6 +278,13 @@ class App:
         }
         for widget, text in tips.items():
             Tooltip(widget, text)
+
+    def _save_catalog_height(self, rows):
+        self.preferences["catalog_rows"] = rows
+        try:
+            save_preferences(self.data, {"catalog_rows": rows})
+        except OSError:
+            self.catalog_label.set("列表高度已调整，本次设置暂时无法保存。")
 
     def _arm_changed(self):
         if self.arm_var.get():
@@ -336,7 +353,7 @@ class App:
         self.player.unload()
         self.song = None
         self.song_label.set("还没有可演奏的曲谱")
-        self.details_label.set("载入 MIDI 后会检查九键音域；需要转换的曲谱会给出处理指引。")
+        self.details_label.set("载入 MIDI 后会检查音域，超出时可在工具内适配九键。")
 
     def refresh_windows(self):
         self.player.stop()
@@ -462,10 +479,11 @@ class App:
         self.last_log_onsets = 0
         self.song_label.set(score.title)
         self._update_song_details()
-        if score.duplicate_onsets:
-            self.catalog_label.set(f"已载入完整曲谱。同一时刻同一音高的 {score.duplicate_onsets} 个重复事件合并为一次物理敲击。")
-        else:
-            self.catalog_label.set("完整曲谱已载入；演奏期间无需网络。")
+        message = f"九键适配完成，调整了 {score.adapted_notes} 个音符。" if score.adapted_notes else "完整曲谱已载入，演奏期间无需网络。"
+        duplicates = score.duplicate_onsets
+        if duplicates:
+            message += f" 同时落在同一键的 {duplicates} 个重复音合并敲击。"
+        self.catalog_label.set(message)
 
     def _speed(self):
         return float(self.speed_var.get().removesuffix("×"))
@@ -473,7 +491,8 @@ class App:
     def _update_song_details(self):
         if self.song:
             version = f" · 版本 {self.song.version[:8]}" if self.song.version else " · 本地 MIDI"
-            self.details_label.set(f"{len(self.song.notes)} 个音符 · 原谱 {format_time(self.song.duration)} · {self.player.speed:g}× · 预计演奏 {format_time(self.player.duration)}{version}")
+            adapted = f"九键适配（改动 {self.song.adapted_notes} 音） · " if self.song.adapted_notes else ""
+            self.details_label.set(f"{adapted}{len(self.song.notes)} 个音符 · 原谱 {format_time(self.song.duration)} · {self.player.speed:g}× · 预计演奏 {format_time(self.player.duration)}{version}")
 
     def _change_speed(self):
         try:
@@ -540,12 +559,12 @@ class App:
         wrap = ttk.Frame(win, padding=22)
         wrap.pack(fill="both", expand=True)
         if isinstance(exc, UnsupportedNotes):
-            title = "这首曲谱需要先转换"
-            summary = f"游戏的手碟只有 9 个固定音。\n这首曲谱的 {len(exc.score.notes)} 个音符中，有 {exc.count} 个不在这 9 个音里。"
-            next_step = "想马上弹奏：点下方“找能直接弹的曲谱”。\n想弹这首：查看网站转谱说明，处理后导出 MIDI，再重新导入。\n本工具保留原谱，不会自动改音或删音。"
+            title = "这首曲谱超出手碟音域"
+            summary = f"网页用合成音色试听 MIDI，游戏手碟只有 9 个固定音。\n这首曲谱共有 {len(exc.score.notes)} 个音符，其中 {exc.count} 个超出游戏音域。"
+            next_step = "点“适配九键并载入”即可在工具里处理。适配保留节奏，将超范围音换到其他八度或接近的九键音，同一时刻落在同一键的音只敲一次。原 MIDI 文件会保留。"
             detail = exc.details
             self.song_label.set(f"《{exc.score.title}》暂时不能直接弹")
-            self.details_label.set("请按提示换一首九键曲谱，或转换后重新导入；当前不会发送音键。")
+            self.details_label.set("可在提示中适配九键，或选择能按原音高弹奏的曲谱。")
         else:
             title = "这一步还没完成"
             if isinstance(exc, SiteBlocked):
@@ -584,11 +603,14 @@ class App:
         win.protocol("WM_DELETE_WINDOW", close)
         win.bind("<Escape>", lambda _: close())
         if isinstance(exc, UnsupportedNotes):
+            def adapt():
+                close()
+                self._work("正在适配九键…", lambda: adapt_to_nine_keys(exc.score), self._set_score)
             def compatible():
                 close()
                 self.search_compatible()
-            ttk.Button(buttons, text="找能直接弹的曲谱", style="Accent.TButton", command=compatible).pack(side="left")
-            ttk.Button(buttons, text="转谱说明", command=lambda: webbrowser.open(BASE + "/guide")).pack(side="left", padx=6)
+            ttk.Button(buttons, text="适配九键并载入", style="Accent.TButton", command=adapt).pack(side="left")
+            ttk.Button(buttons, text="找可直奏曲谱", command=compatible).pack(side="left", padx=6)
             if exc.score.source.startswith(BASE + "/scores/"):
                 ttk.Button(buttons, text="原曲网页", command=lambda: webbrowser.open(exc.score.source)).pack(side="left")
         else:

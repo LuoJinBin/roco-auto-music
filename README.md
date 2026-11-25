@@ -8,13 +8,13 @@
 
 无需自行安装 Python，选择一种方式：
 
-- **[Windows x64 安装包](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.2.0-alpha.1/RocoAutoMusic-Setup-1.2.0-alpha.1-x64.exe)**：安装到用户目录，提供开始菜单入口、可选桌面快捷方式与卸载。
-- **[免安装 ZIP](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.2.0-alpha.1/RocoAutoMusic-1.2.0-alpha.1-Windows-x64.zip)**：解压后运行 `RocoAutoMusic.exe`。
-- [完整 Release、源码与 SHA-256 校验值](https://github.com/LuoJinBin/roco-auto-music/releases/tag/v1.2.0-alpha.1)。
+- **[Windows x64 安装包](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.2.0-alpha.2/RocoAutoMusic-Setup-1.2.0-alpha.2-x64.exe)**：安装到用户目录，提供开始菜单入口、可选桌面快捷方式与卸载。
+- **[免安装 ZIP](https://github.com/LuoJinBin/roco-auto-music/releases/download/v1.2.0-alpha.2/RocoAutoMusic-1.2.0-alpha.2-Windows-x64.zip)**：解压后运行 `RocoAutoMusic.exe`。
+- [完整 Release、源码与 SHA-256 校验值](https://github.com/LuoJinBin/roco-auto-music/releases/tag/v1.2.0-alpha.2)。
 
 安装包不会自动启动程序、安装系统驱动或重启电脑。首次使用 Interception 输入仍需自行配置官方系统驱动；已经配置过的电脑无需重复安装。驱动获取与安装步骤见 [首次使用说明](docs/INSTALL.md)。
 
-## 界面截图
+## 界面截图（1.2.0-alpha.1）
 
 天空、草地、城堡与手碟均为工具原创绘制，没有使用游戏官方素材。实际工具界面截图；曲库列表为公开页面快照。截图期间未绑定游戏、未启用全局快捷键或发送音键，不代表演奏测试通过。
 
@@ -52,7 +52,8 @@
 - 倍速：0.5×、0.75×、1×、1.25×、1.5×、2×，默认 1×。
 - F8 开始/暂停/继续，F9 停止复位；首次开始倒计时 3 秒。
 - 每首播放完停止，不循环、不自动下一首；切换到其他窗口自动暂停。
-- 超范围曲谱给出处理入口：找九键可直奏曲谱、查看转谱说明、展开音符详情；不自动改音或删音。
+- 曲库列表默认显示 7 行，拖动列表下方的横条可调整高度，调整后会记住。
+- 超范围 MIDI 可在工具内选择“适配九键并载入”。原谱保留，超范围音优先换八度，其余音换成接近的九键音，保留起音时间。多个音同时落在同一键时只敲一次。
 - 三步就绪提示、悬停说明、中文帮助；新曲载入失败后清空旧曲，避免误奏。
 - 基于 GitHub Releases 检查更新、稳定/预发布通道、可选启动提醒、下载/取消、SHA-256 校验和确认后退出安装。无需自建后端。
 
@@ -121,9 +122,14 @@ python -m venv .venv
 
 在线读取使用 Windows 证书验证，不忽略 TLS 错误；网站返回 HTTP 401/403/412/429、安全验证或明确拒绝时停止读取，不切换身份或后端。非 MIDI 和不兼容音符不会静默转换。
 
-## 参与开发
+## 建议与 Bug 反馈
 
-欢迎提交 Issue 或 Pull Request，说明复现步骤、Windows/Python 版本、输入模式与预期行为。不要上传账号信息、设备标识、下载缓存或他人曲谱。测试代码保存在 `tests/`；本次公开发布未运行这些测试，也没有配置自动测试工作流。
+欢迎提出新功能、界面或演奏体验的改进建议，也欢迎报告 Bug。先看看是否已有相同反馈，再新建一条。 [查看已有反馈](https://github.com/LuoJinBin/roco-auto-music/issues) · [提交建议或 Bug](https://github.com/LuoJinBin/roco-auto-music/issues/new)
+
+- **建议**可以写下你想完成什么、目前哪一步不方便，以及你希望怎么改。
+- **Bug**请附上工具版本、Windows 版本、复现步骤、预期与实际结果。演奏问题可附公开曲谱链接、倍速和输入模式。截图请遮住账号信息。
+
+也欢迎提交 Pull Request。测试代码保存在 `tests/`，本版未运行功能测试。
 
 ## 许可
 

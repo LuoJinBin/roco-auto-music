@@ -8,6 +8,9 @@ from tkinter import ttk
 BG = "#eef6f5"
 INK = "#234253"
 TEAL = "#267d88"
+DEFAULT_CATALOG_ROWS = 7
+MIN_CATALOG_ROWS = 4
+MAX_CATALOG_ROWS = 24
 
 
 class Tooltip:
@@ -66,6 +69,46 @@ class ScrollBody:
         if widget.winfo_class() in ("Treeview", "TCombobox", "Text", "Listbox", "TSpinbox"):
             return
         self.canvas.yview_scroll(-int(event.delta / 120), "units")
+
+
+class TreeHeightGrip(ttk.Label):
+    def __init__(self, parent, tree, row_height, save_height):
+        super().__init__(parent, text="↕  拖动调整列表高度", anchor="center",
+                         padding=(0, 3), cursor="sb_v_double_arrow",
+                         background="#deeceb", takefocus=True)
+        self.tree = tree
+        self.row_height = row_height
+        self.save_height = save_height
+        self.drag_origin = None
+        self.bind("<ButtonPress-1>", self.start_drag)
+        self.bind("<B1-Motion>", self.drag)
+        self.bind("<ButtonRelease-1>", self.finish_drag)
+        self.bind("<Up>", lambda _: self.adjust(-1))
+        self.bind("<Down>", lambda _: self.adjust(1))
+
+    def start_drag(self, event):
+        self.focus_set()
+        self.drag_origin = event.y_root, int(self.tree.cget("height"))
+
+    def drag(self, event):
+        if self.drag_origin is not None:
+            y, rows = self.drag_origin
+            self.set_rows(rows + round((event.y_root - y) / self.row_height))
+
+    def finish_drag(self, _):
+        if self.drag_origin is not None:
+            _, rows = self.drag_origin
+            self.drag_origin = None
+            if rows != int(self.tree.cget("height")):
+                self.save_height(int(self.tree.cget("height")))
+
+    def set_rows(self, rows):
+        self.tree.configure(height=max(MIN_CATALOG_ROWS, min(MAX_CATALOG_ROWS, rows)))
+
+    def adjust(self, amount):
+        self.set_rows(int(self.tree.cget("height")) + amount)
+        self.save_height(int(self.tree.cget("height")))
+        return "break"
 
 
 class KingdomBanner(tk.Canvas):
@@ -127,7 +170,7 @@ def readonly_text(parent, text, height=10):
 
 HELP = {
     "第一次使用": "① 选一首曲\n在线搜索后选中歌曲，再点“载入曲谱”；也可以导入本地 MIDI。想省心，点“只找能直接弹的”。默认列表仍显示全部。\n\n② 连接游戏\n启动《洛克王国：世界》，进入九键手碟演奏界面。在本工具中选择游戏窗口，并勾选“已进入九键演奏界面”。\n\n③ 开始演奏\n按 F8 或点击开始，3 秒内切回游戏。F8 暂停/继续，F9 停止回到开头。每首结束后停止，不自动下一首。\n\n切换到工具或其他窗口会暂停，回到游戏后要自己按 F8 继续。工具不能判断游戏当前场景，离开手碟前请先按 F9。",
-    "曲谱与筛选": "游戏只有九个固定音，不是所有 MIDI 都能直接弹。\n\n“九键可直奏”只筛选网站标记的候选曲谱，载入后仍会在本机检查每个音。\n\n若提示需要转换：最省事是换一首九键可直奏曲谱；想保留这首旋律，请在网站查看转谱说明、处理后导出 MIDI，再导入本工具。转谱可能改变原曲音高；本工具不会偷偷改音或删音。\n\n图片、PDF、JSON、TXT 只能浏览，不能直接自动演奏。\n\n选择筛选后需点“应用筛选”；清除筛选会恢复所有曲谱并清空关键词。",
+    "曲谱与筛选": "拖动曲库下方的横条可调整列表高度。列表高度会保存，下次打开自动恢复。\n\n网页用通用合成音色试听 MIDI，游戏手碟只有九个固定音。“九键可直奏”筛选网站标记的候选曲谱，载入时还会检查每个音。\n\n音符超出九键范围时，可以点“适配九键并载入”。工具优先把超范围音换到能弹的八度，其余音换成接近的手碟音。节奏保留，原 MIDI 文件保留。和弦中同时落在同一键的音只敲一次。想保留原音高，可找九键可直奏曲谱。\n\n图片、PDF、JSON、TXT 可在网页查看。自动演奏需要 MIDI。\n\n选择筛选后需点“应用筛选”。清除筛选会恢复所有曲谱并清空关键词。",
     "按键与倍速": "F8：首次开始有 3 秒准备时间；播放时暂停；暂停后继续。\nF9：停止并回到曲首。\n\n0.5× / 0.75× 为慢速；1× 为原速；1.25× / 1.5× / 2× 为加速。\n进度显示原谱位置，预计演奏时长随倍速变化。\n\n九键 MIDI → 游戏键：\nA2(45) → B，E3(52) → F，F3(53) → G\nG3(55) → H，A3(57) → J，B3(59) → K\nC4(60) → T，D4(62) → Y，E4(64) → U\n\n“按压时长”控制一次按多久，通常保持 30 毫秒即可，不是曲速。",
     "没声音怎么办": "先在游戏手动按 F，确认已经打开九键演奏界面。\n\n1. 检查三步指引是否都已就绪，确认选对游戏窗口。\n2. 若游戏以管理员权限运行，工具也需要相应权限。\n3. 扫描码/虚拟键是普通模拟输入，部分环境可能不接收。已配置官方 Interception 驱动的电脑可在“更多设置”选择驱动模式。\n4. 未配置驱动时，点“驱动与安装说明”了解步骤。工具不自动安装驱动、重启或修改系统安全设置。\n\n若快捷键被其他软件占用，关闭占用软件后重开本工具；也可点击开始并在 3 秒内切回游戏。\n\n“导出演奏记录”用于排查发送时间，日志不能证明游戏实际发出了声音。",
     "更新与隐私": "点右上角“检查更新”查看 GitHub Releases。无需账号，也没有自建后台。\n\n可选“启动时检查更新”，默认关闭。预发布通道提供较新的开发版本，可能存在尚未验证的问题。\n\n下载后先核对大小与 SHA-256，再由你确认退出并打开安装向导。不会静默安装，不会自动启动演奏。安装版会沿用原目录；便携版可选择安装新版，或从发布页下载新版 ZIP。\n\n旧版 1.1 没有更新按钮，需要先手动安装一次 1.2。\n\n配置和缓存保存在 %LOCALAPPDATA%\\RocoAutoMusic。更新保留此目录。程序不读游戏内存、不采集账号、不录音。\n\n本工具是玩家制作，与游戏官方和曲谱网站无隶属关系。",

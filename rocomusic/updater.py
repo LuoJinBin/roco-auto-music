@@ -50,11 +50,15 @@ def file_sha256(path: Path):
 
 
 def load_preferences(directory: Path):
-    defaults = {"check_on_start": False, "prereleases": "-" in VERSION}
+    defaults = {"check_on_start": False, "prereleases": "-" in VERSION, "catalog_rows": None}
     try:
         value = json.loads((directory / "settings.json").read_text(encoding="utf-8"))
         if isinstance(value, dict):
-            defaults.update({key: value[key] for key in defaults if type(value.get(key)) is bool})
+            for key in ("check_on_start", "prereleases"):
+                if type(value.get(key)) is bool:
+                    defaults[key] = value[key]
+            if type(value.get("catalog_rows")) is int:
+                defaults["catalog_rows"] = value["catalog_rows"]
     except (OSError, ValueError):
         pass
     return defaults
